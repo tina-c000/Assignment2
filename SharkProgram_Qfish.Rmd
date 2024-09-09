@@ -1,0 +1,28 @@
+---
+title: "Assignment2_Qfish"
+output: html_document
+date: "2024-09-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Upload libraries
+```{r}
+library("tidyverse")
+
+```
+
+#To download data go to:
+
+https://qfish.fisheries.qld.gov.au/query/number-caught-by-area-calendar-year-and-species-group/table#
+
+#Load data
+
+```{r}
+export <- read_csv("Data/export.csv")
+View(export)
+```
+
+

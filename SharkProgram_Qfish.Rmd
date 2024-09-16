@@ -8,21 +8,164 @@ date: "2024-09-09"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 #Upload libraries
 ```{r}
-library("tidyverse")
+#install.packages("janitor")
 
+library("tidyverse")
+library("janitor")
 ```
 
 #To download data go to:
 
 https://qfish.fisheries.qld.gov.au/query/number-caught-by-area-calendar-year-and-species-group/table#
 
-#Load data
+#Load data and elevate a row
+
+In the raw dataset, the first row has been elevated to be the column names with the row_to_names function, setting the remove_rows_above as 'FALSE', to keep the previous row which otherwise it would be deleted. 
 
 ```{r}
-export <- read_csv("Data/export.csv")
-View(export)
+Qfish <- read_csv("Data/export.csv") |>
+  row_to_names(row_number = 2, remove_rows_above = FALSE)|>
+  janitor::clean_names()
+
+names(Qfish)
 ```
 
 
+#Comments on the table before tidying it
+
+There are four main rules to follow while tidying your dataset:
+
+1) Each variable must have its own column
+2) Each observation must have its own row
+3) Each value must have its own cell
+4) Remember to tidy your dataset in order to obtain the information that you
+   need from your hypothesis and goals.
+
+Shark control program dataset:
+
+The raw dataset is very messy, it is very wide rather than longer, and important data about the species type, number of observations and the year are spread across the row without a logical order. 
+
+GOAL: Create a dataset for each type of species observed (mammal, turtle, shark, other), which include the area, years and the total number of observations. Then plot to see relationships among year and number of species caught.
+
+Hypothesis: Many changes have been done on the shark nets, aiming at reducing the bycatch and improving the survival rate of sharks caught. Therefore, what it should be seen is a decrease in the number of species caught as bycatch over the years.
+
+#Create four dataframes
+
+STEP 1:
+To create a dataframe for each species of animal, the function "select" has been used to select the column containing the desired type of animal, and the areas. 
+
+i.e: sharks<- Qfish |> select(area | contains("shark"))|> 
+     \Select areas and rows containing the world shark
+
+STEP 2:
+Use row_to_names function to put the first row as the column names. 
+Note that the first column is without a name, and that's because by assigning the first row as the column name, an 'na' value as been replaced to the 'area' name. The function RENAME gives the name 'area' to that cell.
+
+i.e: row_to_names(row_number = 1)|> 
+     \assign the selected ones and bring them as the first column names
+     rename(Area=1)|> 
+     \Rename the first cell of the first column as Area
+
+STEP 3
+Columns are recognized as character values, therefore they have to be changed in numeric, except for the areas. Thus,the function MUTATE has been used to convert variables in numeric avoiding to change the column Area. 
+
+i.e:  mutate(across(-c(Area), as.numeric)) 
+      \Mutate every variable in numeric except for Area
+
+
+```{r}
+sharks<- Qfish |> 
+  select(area | contains("shark"))|> 
+  row_to_names(row_number = 1)|> 
+  rename(Area=1)|> 
+  mutate(across(-c(Area), as.numeric))
+
+head(sharks, n=2) #used only to see dataset output and check if it is okay
+
+turtles<- Qfish |> 
+  select(area | contains("turtle"))|>
+  row_to_names(row_number = 1)|>
+  rename(Area=1)|>
+  mutate(across(-c(Area), as.numeric))
+
+head(turtles, n=2)
+
+mammals<- Qfish |> 
+  select(area | contains("mammal"))|>
+  row_to_names(row_number = 1)|>
+  rename(Area=1)|>
+  mutate(across(-c(Area), as.numeric))
+
+head(mammals, n=2)
+
+others<- Qfish |> 
+  select(area | contains("other"))|>
+  row_to_names(row_number = 1)|>
+  rename(Area=1)|>
+  mutate(across(-c(Area), as.numeric))
+
+head(others, n=2)
+```
+
+#Make another dataframe to create a longer table instead of wider
+
+At the moment, each dataframe contains the number of individuals observed, the area, and the observation year. However, years are not displaied in a unique column, but are still presented in the row of the column names. 
+
+To make the dataset clear, years should be showed in their own column, and it can be done using the pivot_longer function, where years are presented in one column named "Year", values regarding the individuals observed are shown in another column called "Obs_", and the Area column remains unchanged. 
+
+```{r}
+sharks_long <- sharks|>
+  pivot_longer(!Area, names_to = "Year", values_to = "Obs_shark")
+
+turtles_long <- turtles|>
+  pivot_longer(!Area, names_to = "Year", values_to = "Obs_turtle")
+
+mammals_long <- mammals|>
+  pivot_longer(!Area, names_to = "Year", values_to = "Obs_mammal")
+```
+
+#Making a plot with ggplot function
+
+```{r}
+
+shark_stats <- 
+sharks_long |>
+  filter(Area != "Grand Total") |>
+  group_by(Year) |>
+  summarise(Mean = mean(Obs_shark, na.rm = TRUE),
+            SD = sd(Obs_shark, na.rm = TRUE)) |>
+  mutate(Year = as.numeric(Year)) |>
+  mutate(Taxa = "Sharks")
+
+turtle_stats <- 
+turtles_long |>
+  filter(Area != "Grand Total") |>
+  group_by(Year) |>
+  summarise(Mean = mean(Obs_turtle, na.rm = TRUE),
+            SD = sd(Obs_turtle, na.rm = TRUE)) |>
+  mutate(Year = as.numeric(Year)) |>
+  mutate(Taxa = "Turtles")
+
+mammals_stats<-
+  mammals_long |>
+  filter(Area != "Grand Total") |>
+  group_by(Year) |>
+  summarise(Mean = mean(Obs_mammal, na.rm = TRUE),
+            SD = sd(Obs_mammal, na.rm = TRUE)) |>
+  mutate(Year = as.numeric(Year)) |>
+  mutate(Taxa = "Mammals")
+
+combine_stats <- 
+  bind_rows(shark_stats, turtle_stats, mammals_stats)
+```
+
+#Plot with the function ggplot data from shark, turtle, and mammal, to compare the number of bycatch with the number of sharks caught
+
+```{r}
+ggplot(data = combine_stats, aes(x =Year, y = Mean, fill = Taxa, shape = Taxa), colour = "black") +
+  geom_line()+
+  geom_pointrange(aes(ymin = Mean - SD, ymax = Mean + SD))
+```

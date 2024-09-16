@@ -48,7 +48,7 @@ Shark control program dataset:
 
 The raw dataset is very messy, it is very wide rather than longer, and important data about the species type, number of observations and the year are spread across the row without a logical order. 
 
-GOAL: Create a dataset for each type of species observed (mammal, turtle, shark, other), which include the area, years and the total number of observations. Then plot to see relationships among year and number of species caught.
+GOAL: Create a dataset for each type of species observed (mammal, turtle,and shark), which include the area, years and the total number of observations. Then plot to see relationships among year and number of species caught.
 
 Hypothesis: Many changes have been done on the shark nets, aiming at reducing the bycatch and improving the survival rate of sharks caught. Therefore, what it should be seen is a decrease in the number of species caught as bycatch over the years.
 
@@ -162,10 +162,22 @@ combine_stats <-
   bind_rows(shark_stats, turtle_stats, mammals_stats)
 ```
 
-#Plot with the function ggplot data from shark, turtle, and mammal, to compare the number of bycatch with the number of sharks caught
+#Plot with the function ggplot the data from the following taxa: sharks, turtles, and mammals, to compare the number of bycatch with the number of sharks caught
+
+Graph 1: 
+From the graph, it can be seen that the number of bycatch compared to the mean of sharks caught is relatively low and stable over the whole period, with a very small variation. On the other hand, the data obtained from shark catches are much higher and variates between 50 and 75 mean of catches.
+Considering the data obtain, no improvement seems to be done in order to reduce bycatching, which is mantained constant.
 
 ```{r}
+#Graph 1: 
+ggplot(data = combine_stats, aes(x =Year, y = Mean, fill= Taxa)) +
+    geom_smooth(mapping = aes(ymin = Mean - SD, ymax = Mean + SD),colour = "black", size=0.5)+
+  geom_point(size=0.7)+
+  xlab("Year") + ylab("Mean of species caught")
+
+#Other version
 ggplot(data = combine_stats, aes(x =Year, y = Mean, fill = Taxa, shape = Taxa), colour = "black") +
   geom_line()+
   geom_pointrange(aes(ymin = Mean - SD, ymax = Mean + SD))
+
 ```

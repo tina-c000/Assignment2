@@ -166,14 +166,15 @@ combine_stats <-
 
 Graph 1: 
 From the graph, it can be seen that the number of bycatch compared to the mean of sharks caught is relatively low and stable over the whole period, with a very small variation. On the other hand, the data obtained from shark catches are much higher and variates between 50 and 75 mean of catches.
-Considering the data obtain, no improvement seems to be done in order to reduce bycatching, which is mantained constant.
+Considering the data obtain, no improvement seems to be done in order to reduce bycatching, which is mantained constant.Moreover, it can be seen an important increase in the number of sharks caught from 2020, leading to new consideration to take into account. For istance, the number of sharks is increased due to an increasing in the sea temperature.
 
 ```{r}
 #Graph 1: 
 ggplot(data = combine_stats, aes(x =Year, y = Mean, fill= Taxa)) +
     geom_smooth(mapping = aes(ymin = Mean - SD, ymax = Mean + SD),colour = "black", size=0.5)+
   geom_point(size=0.7)+
-  xlab("Year") + ylab("Mean of species caught")
+  labs(x="Year",y="Mean", title = "Mean of species caught per year")+
+  theme(plot.title = element_text(hjust = 0.5))
 
 #Other version
 ggplot(data = combine_stats, aes(x =Year, y = Mean, fill = Taxa, shape = Taxa), colour = "black") +
